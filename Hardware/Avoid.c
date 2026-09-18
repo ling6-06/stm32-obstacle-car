@@ -28,9 +28,9 @@ typedef struct
 
 static const RobotStep_t avoid_seq[] =
 {
-    { ACT_BACK,  1000 },     /* 步骤 1：后退 1s    —— 退开      */
-    { ACT_RIGHT,  700 },     /* 步骤 2：右转 0.7s  —— 转开      */
-    { ACT_STOP,   300 },     /* 步骤 3：停 0.3s    —— 观察一下  */
+    { ACT_BACK,  500 },     /* 步骤 1：后退 0.5s    —— 退开      */
+    { ACT_RIGHT,  500 },     /* 步骤 2：右转 0.5s  —— 转开      */
+    { ACT_STOP,   100 },     /* 步骤 3：停 0.1s    —— 观察一下  */
 };
 
 #define AVOID_STEPS  (sizeof(avoid_seq) / sizeof(avoid_seq[0]))
@@ -90,9 +90,6 @@ void Robot_StartAvoid(uint8_t speed)
 void Robot_Task(void)
 {
     uint32_t now = Millis();
-
-	 /* ---------- 避障序列推进 ---------- */
-    if (robot_state != ROBOT_AVOID) return;
 	
     /* ---------- 蜂鸣器：独立于序列进度 ---------- */
     if (buzzing && (now - seq_t0) >= BUZZ_MS)
@@ -100,6 +97,9 @@ void Robot_Task(void)
         Buzzer_OFF();
         buzzing = 0;
     }
+
+	 /* ---------- 避障序列推进 ---------- */
+    if (robot_state != ROBOT_AVOID) return;
 
     if ((now - step_t0) >= avoid_seq[step_idx].ms)
     {

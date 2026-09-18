@@ -1,4 +1,5 @@
 #include "stm32f10x.h"                  // Device header
+#include "SystemTime.h"
 #include "Delay.h"
 #include "Timer.h"
 
@@ -6,6 +7,8 @@
 #define GPIO_Pin_Trig		GPIO_Pin_15			//超声波模块输出
 
 float volatile Ultrasonic_Distance;
+
+static uint32_t last_trig_t0;
 
 void Ultrasonic_Init(void)
 {
@@ -58,10 +61,16 @@ void EXTI15_10_IRQHandler(void)
 
 float Ultrasonic_StartMeasure(void)
 {
-	float Temp;
-	GPIO_SetBits(GPIOB, GPIO_Pin_Trig);
-	Delay_us(20);
-	GPIO_ResetBits(GPIOB, GPIO_Pin_Trig);
-	Temp = Ultrasonic_Distance * 100;		//单位为cm
-	return Temp;
+	uint32_t now = Millis();
+
+	if (now - last_trig_t0 >= 60)       /* HC-SR04 要求测量周期 ≥ 60ms */
+	{
+		last_trig_t0 = now;
+		GPIO_SetBits(GPIOB, GPIO_Pin_Trig);
+		Delay_us(20);
+		GPIO_ResetBits(GPIOB, GPIO_Pin_Trig);
+	}
+	/* 没到 60ms 就直接返回上一次的值 —— 不阻塞 */
+
+	return Ultrasonic_Distance * 100;
 }

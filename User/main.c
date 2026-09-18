@@ -27,7 +27,7 @@ int main(void)
 		
 		if(!Robot_IsAvoiding())
 		{
-			if(Distance < 40)
+			if(Distance < 30)
 			{
 				Robot_StartAvoid(AVOID_SPEED);
 			}
