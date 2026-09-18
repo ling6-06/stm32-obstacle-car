@@ -24,16 +24,17 @@ int main(void)
 	{   
 		Distance = Ultrasonic_StartMeasure();
 		
-		if(Distance < 40)
+		if(Robot_IsIdle())
 		{
-			Buzzer_ON();
-			Robot_SetBack(70);
-			Buzzer_OFF();
-			Robot_SetRight(70);
-		}
-		else
-		{
-			Robot_SetRun(70);
+			if(Distance < 40)
+			{
+				Robot_StartAvoid(70);
+				Robot_Task();
+			}
+			else
+			{
+				Robot_SetRun(70);
+			}
 		}
 	}
 } 
