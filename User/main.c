@@ -6,6 +6,7 @@
 #include "Timer.h"
 #include "Robot.h"
 #include "Ultrasonic.h"
+#include "Avoid.h"
 
 float Distance;
 
@@ -24,17 +25,17 @@ int main(void)
 	{   
 		Distance = Ultrasonic_StartMeasure();
 		
-		if(Robot_IsIdle())
+		if(!Robot_IsAvoiding())
 		{
 			if(Distance < 40)
 			{
-				Robot_StartAvoid(70);
-				Robot_Task();
+				Robot_StartAvoid(AVOID_SPEED);
 			}
 			else
 			{
 				Robot_SetRun(70);
 			}
 		}
+		Robot_Task();
 	}
 } 

@@ -2,10 +2,6 @@
 #define __ROBOT_H
 
 void Robot_Init(void);
-void Robot_StartAvoid(uint8_t speed);
-void Robot_Task(void);
-uint8_t Robot_IsIdle(void);
-
 void Robot_SetRun(uint8_t speed);
 void Robot_SetBack(uint8_t speed);
 void Robot_Setleft(uint8_t speed);

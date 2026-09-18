@@ -755,6 +755,16 @@
               <FileType>5</FileType>
               <FilePath>.\Hardware\SystemTime.h</FilePath>
             </File>
+            <File>
+              <FileName>Avoid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Avoid.c</FilePath>
+            </File>
+            <File>
+              <FileName>Avoid.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Avoid.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
