@@ -27,15 +27,15 @@ int main(void)
 		
 		if(!Robot_IsAvoiding())
 		{
-			if(Distance < 30)
+			if(Distance < TRIGGER_CM)
 			{
-				Robot_StartAvoid(AVOID_SPEED);
+				Robot_StartAvoid(AVOID_SPEED, Distance);
 			}
 			else
 			{
 				Robot_SetRun(70);
 			}
 		}
-		Robot_Task();
+		Robot_Task(Distance );
 	}
 } 

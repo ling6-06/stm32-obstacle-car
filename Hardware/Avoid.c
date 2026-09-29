@@ -16,21 +16,23 @@ typedef enum
     ACT_SPIN_RIGHT       /* 原地右转 */
 } RobotAct_t;
 
-/* ==================== ② 步骤 = 动作 + 持续时长 ==================== */
+/* ==================== ② 步骤 = 动作 + 超时上限 + 提前结束增量 ==================== */
 typedef struct
 {
     RobotAct_t act;
-    uint16_t   ms;
+    uint16_t   ms;		/* 超时上限：这一步最多走多久（兜底） */
+	uint16_t   gain;      /* 距离比进入这一步时涨这么多厘米就提前结束（0 = 不提前） */
 } RobotStep_t;
 
 /* ==================== ③ 避障序列：整个动作在这里一目了然 ==================== */
 #define AVOID_SPEED  70
+#define TRIGGER_CM   30      /* 近了 → 开始避障 */
 
 static const RobotStep_t avoid_seq[] =
 {
-    { ACT_BACK,  500 },     /* 步骤 1：后退 0.5s    —— 退开      */
-    { ACT_RIGHT,  500 },     /* 步骤 2：右转 0.5s  —— 转开      */
-    { ACT_STOP,   100 },     /* 步骤 3：停 0.1s    —— 观察一下  */
+    { ACT_BACK,  1500 , 20 },    /* 后退：比进入时开阔 20cm 就算退开；退不动就 1.5s 超时 */
+    { ACT_SPIN_RIGHT,  1500 , 25 },     /* 原地右转"扫"路，扫到出路就停；最多转 1.5s */
+    { ACT_STOP,   200 , 0},     /* 停 0.2s 稳住车身（走满） */
 };
 
 #define AVOID_STEPS  (sizeof(avoid_seq) / sizeof(avoid_seq[0]))
@@ -52,6 +54,7 @@ static uint32_t step_t0;      /* 当前步骤的起点  —— 序列推进用 *
 static uint8_t  step_idx;     /* 当前执行到第几步 */
 static uint8_t  speed_now;
 static uint8_t  buzzing;
+static float    step_dist0;   /* 进入当前步骤时的前方距离 —— 提前结束的基准 */
 
 /* ==================== ⑥ 执行一个动作 ==================== */
 static void Robot_DoAct(RobotAct_t act, uint8_t speed)
@@ -70,13 +73,14 @@ static void Robot_DoAct(RobotAct_t act, uint8_t speed)
 }
 
 /* ==================== ⑦ 启动避障序列 ==================== */
-void Robot_StartAvoid(uint8_t speed)
+void Robot_StartAvoid(uint8_t speed, float distance_cm)
 {
     uint32_t now = Millis();
 
     seq_t0    = now;                          /* 序列起点 */
     step_t0   = now;                          /* 第 0 步的起点 */
     step_idx  = 0;
+	step_dist0 = distance_cm;                 /* ← 新增：第 0 步的基准距离 */
     speed_now = speed;
 
     Robot_DoAct(avoid_seq[0].act, speed);     /* 执行第 1 步 */
@@ -87,9 +91,10 @@ void Robot_StartAvoid(uint8_t speed)
 }
 
 /* ==================== ⑧ 推进（主循环每轮调用）==================== */
-void Robot_Task(void)
+void Robot_Task(float distance_cm)
 {
     uint32_t now = Millis();
+	uint8_t done = 0;
 	
     /* ---------- 蜂鸣器：独立于序列进度 ---------- */
     if (buzzing && (now - seq_t0) >= BUZZ_MS)
@@ -100,9 +105,17 @@ void Robot_Task(void)
 
 	 /* ---------- 避障序列推进 ---------- */
     if (robot_state != ROBOT_AVOID) return;
-
+	
+	if (avoid_seq[step_idx].gain > 0 && distance_cm >= step_dist0 + avoid_seq[step_idx].gain)
+	{	
+		done = 1;                                      /* 条件满足 → 提前结束 */
+	}
     if ((now - step_t0) >= avoid_seq[step_idx].ms)
-    {
+    {	
+		done = 1;
+	}
+	if(done)
+	{
         step_idx++;
         step_t0 = now;
 
@@ -112,6 +125,7 @@ void Robot_Task(void)
         }
         else
         {
+			step_dist0 = distance_cm;           /* ← ⑤ 新步骤的基准距离 */
             Robot_DoAct(avoid_seq[step_idx].act, speed_now);
         }
     }
